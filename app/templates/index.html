@@ -31,11 +31,16 @@
           <h1
             class="font-bold mt-24 lg:mt-0 font-medium text-5xl text-gray-600"
           >
-          Youtube music downloader
+          Youtube Music Downloader
           </h1>
           <p class="leading-relaxed mt-4 text-xl text-gray-500">
-            Download music from url.
+            Enter the url and enjoy.
           </p>
+          {%if error%}
+          <p class="leading-relaxed mt-4 text-xl text-red-500">
+            {{error}}.
+          </p>
+          {%endif%}
         </div>
         <form method="post" action="/streams/url">
           <div
@@ -48,7 +53,7 @@
                 >URL</label
               >
               <input
-                type="string"
+                type="url"
                 id="url"
                 name="url"
                 class="w-full bg-white rounded border border-gray-300 focus:border-indigo-500 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
@@ -62,13 +67,6 @@
           </div>
         </form>
         <br />
-        <div class="mt-10 mr-4">
-          <div class="">
-            <p class="text-5xl text-gray-500 font-bold">
-              Download <span class="text-indigo-500">{{title}}</span>
-            </p>
-          </div>
-        </div>
       </div>
     </section>
   </body>
