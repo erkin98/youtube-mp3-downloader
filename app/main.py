@@ -12,9 +12,6 @@ app.include_router(streams.router)
 BASE_PATH = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
-
-
-@app.get("/")
-async def root():
-    return {"message": "Hello Bigger Applications!"}
-
+@app.get("/", response_class=HTMLResponse)
+async def read_item(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request, "url": "Enter a url"})
