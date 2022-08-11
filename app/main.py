@@ -3,7 +3,7 @@ from pathlib import Path
 from io import BytesIO
 from pytube import YouTube
 from pytube.exceptions import RegexMatchError
-
+from pytube import Search
 import telebot
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
@@ -35,18 +35,25 @@ async def redirect_stream():
 def greet(message):
     bot.send_message(message.chat.id, "Enter the url and enjoy")
 
+@bot.message_handler(commands=["search"])
+def greet(message):
+    search = Search(message.text.split('search')[-1])
+    res = search.results[0].streams.filter(
+                mime_type="audio/mp4", abr="48kbps", only_audio=True
+            ).first()
+    file_path = res.download()
+    bot.send_audio(message.chat.id, audio=open(file_path, 'rb'))
+    os.remove(file_path)
 
 @bot.message_handler(content_types=['text'])
 def hello(message):
     if "youtu" in message.text:
-        buffer = BytesIO()  # Declaring the buffer
         try:
             url = YouTube(message.text)  # Getting the URL
             audio = url.streams.filter(
                 mime_type="audio/mp4", abr="48kbps", only_audio=True
             ).first()  # Store the video into a variable
             file_path = audio.download()
-            buffer.seek(0)
             bot.send_audio(message.chat.id, audio=open(file_path, 'rb'))
             os.remove(file_path)
             
