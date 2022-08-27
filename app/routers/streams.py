@@ -2,9 +2,7 @@ from fastapi import APIRouter, Request, BackgroundTasks
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from fastapi.responses import FileResponse
-from pytube import YouTube
-from pytube.exceptions import RegexMatchError
-from io import BytesIO
+from ..utils.youtube_helpers import donwload_by_url
 import os
 
 
@@ -28,17 +26,11 @@ async def read_item(request: Request):
 async def read_users(request: Request, background_tasks: BackgroundTasks):
     if request.method == "POST":
         form = await request.form()
-        if form["url"] and "youtu" in form["url"]:
-            buffer = BytesIO()  # Declaring the buffer
+        if form["url"] :
             try:
-                url = YouTube(form["url"])  # Getting the URL
-                audio = url.streams.filter(
-                    mime_type="audio/mp4", abr="48kbps", only_audio=True
-                ).first()  # Store the video into a variable
-                file_path = audio.download(filename=f"{audio.title}.mp3")
-                buffer.seek(0)
+                file_path = donwload_by_url(form["url"])
                 background_tasks.add_task(cleanup, file_path)
-            except RegexMatchError:
+            except:
                 return templates.TemplateResponse(
                     "index.html", {"request": request, "error": "Check the url"}
                 )

@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "youtube-mp3-downloader"
+version = "0.1.0"
+description = ""
+authors = ["Erkin <erkinqara@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pytube = "12.1.0"
+fastapi = "0.79.0"
+python-multipart = "0.0.5"
+pyTelegramBotAPI = "3.8.3"
+python-dotenv = "0.20.0"
+
+[tool.poetry.dev-dependencies]
+pytest
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

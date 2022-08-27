@@ -1,9 +1,7 @@
 import os
 from pathlib import Path
-from io import BytesIO
-from pytube import YouTube
+from pytube import YouTube, Search
 from pytube.exceptions import RegexMatchError
-from pytube import Search
 import telebot
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
@@ -11,11 +9,8 @@ from fastapi.templating import Jinja2Templates
 
 from .routers import streams
 from dotenv import load_dotenv, find_dotenv
+from .utils.youtube_helpers import donwload_by_url, download_mp4 
 
-import logging
-
-# logger = telebot.logger
-# telebot.logger.setLevel(logging.DEBUG)
 app = FastAPI()
 
 app.include_router(streams.router)
@@ -36,32 +31,19 @@ def greet(message):
     bot.send_message(message.chat.id, "Enter the url and enjoy")
 
 @bot.message_handler(commands=["search"])
-def greet(message):
-    search = Search(message.text.split('search')[-1])
-    res = search.results[0].streams.filter(
-                mime_type="audio/mp4", abr="48kbps", only_audio=True
-            ).first()
-    file_path = res.download()
+def donwload_by_url(message):
+    file_path = download_mp4(message)
     bot.send_audio(message.chat.id, audio=open(file_path, 'rb'))
     os.remove(file_path)
 
 @bot.message_handler(content_types=['text'])
-def hello(message):
-    if "youtu" in message.text:
-        try:
-            url = YouTube(message.text)  # Getting the URL
-            audio = url.streams.filter(
-                mime_type="audio/mp4", abr="48kbps", only_audio=True
-            ).first()  # Store the video into a variable
-            file_path = audio.download()
-            bot.send_audio(message.chat.id, audio=open(file_path, 'rb'))
-            os.remove(file_path)
-            
-        except RegexMatchError:
-            bot.send_message(message.chat.id, "Wrong url")
-    else:
+def search_by_text(message):
+    try:
+        file_path = donwload_by_url(message.text)
+        bot.send_audio(message.chat.id, audio=open(file_path, 'rb'))
+        os.remove(file_path)
+    except:
         bot.send_message(message.chat.id, "Wrong url")
-        
 
 
 bot.polling()
