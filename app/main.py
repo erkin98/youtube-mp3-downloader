@@ -27,16 +27,16 @@ API_KEY = os.getenv("API_KEY")
 bot = telebot.TeleBot(API_KEY)
 
 @app.get("/", response_class=RedirectResponse)
-async def redirect_stream():
+async def redirect_stream() -> RedirectResponse:
     return RedirectResponse("/streams")
 
 
 @bot.message_handler(commands=["start"])
-def greet(message):
+def greet(message) -> None:
     bot.send_message(message.chat.id, "Enter the url and enjoy")
 
 @bot.message_handler(commands=["search"])
-def greet(message):
+def greet(message) -> None:
     search = Search(message.text.split('search')[-1])
     res = search.results[0].streams.filter(
                 mime_type="audio/mp4", abr="48kbps", only_audio=True
@@ -46,7 +46,7 @@ def greet(message):
     os.remove(file_path)
 
 @bot.message_handler(content_types=['text'])
-def hello(message):
+def hello(message) -> None:
     if "youtu" in message.text:
         try:
             url = YouTube(message.text)  # Getting the URL
