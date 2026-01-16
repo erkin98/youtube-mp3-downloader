@@ -1,50 +1,51 @@
-from fastapi import APIRouter, Request, BackgroundTasks
+from fastapi import APIRouter, Request, BackgroundTasks, Form
 from fastapi.templating import Jinja2Templates
-from pathlib import Path
 from fastapi.responses import FileResponse
-from pytube import YouTube
-from pytube.exceptions import RegexMatchError
-from io import BytesIO
 import os
+import tempfile
+from app.config import settings
+from app.services.youtube import YouTubeService
 
-
-BASE_PATH = Path(__file__).resolve().parent.parent
-templates = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 router = APIRouter()
+templates = Jinja2Templates(directory=str(settings.BASE_PATH / "templates"))
 
-
-def cleanup(temp_file):
-    os.remove(temp_file)
-
+def cleanup(path: str):
+    """Deletes the temporary file."""
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+    except OSError:
+        pass
 
 @router.get("/streams")
-async def read_item(request: Request):
+async def get_streams_page(request: Request):
     return templates.TemplateResponse(
         "index.html", {"request": request, "url": "Enter a url"}
     )
 
-
-@router.post("/streams/{url}")
-async def read_users(request: Request, background_tasks: BackgroundTasks):
-    if request.method == "POST":
-        form = await request.form()
-        if form["url"] and "youtu" in form["url"]:
-            buffer = BytesIO()  # Declaring the buffer
-            try:
-                url = YouTube(form["url"])  # Getting the URL
-                audio = url.streams.filter(
-                    mime_type="audio/mp4", abr="48kbps", only_audio=True
-                ).first()  # Store the video into a variable
-                file_path = audio.download(filename=f"{audio.title}.mp3")
-                buffer.seek(0)
-                background_tasks.add_task(cleanup, file_path)
-            except RegexMatchError:
-                return templates.TemplateResponse(
-                    "index.html", {"request": request, "error": "Check the url"}
-                )
-        else:
-            return templates.TemplateResponse(
-                "index.html", {"request": request, "error": "Check the url"}
-            )
-
-    return FileResponse(file_path, filename=file_path)
+@router.post("/streams")
+async def download_stream(request: Request, background_tasks: BackgroundTasks, url: str = Form(...)):
+    if not url or "youtu" not in url:
+         return templates.TemplateResponse(
+            "index.html", {"request": request, "error": "Check the url"}
+        )
+    
+    try:
+        # Use a temporary directory for the download
+        temp_dir = tempfile.gettempdir()
+        file_path = YouTubeService.download_audio(url, output_path=temp_dir)
+        filename = os.path.basename(file_path)
+        
+        # Schedule cleanup after response is sent
+        background_tasks.add_task(cleanup, file_path)
+        
+        return FileResponse(file_path, filename=filename, media_type="audio/mpeg")
+        
+    except ValueError:
+        return templates.TemplateResponse(
+            "index.html", {"request": request, "error": "Invalid URL"}
+        )
+    except Exception as e:
+        return templates.TemplateResponse(
+            "index.html", {"request": request, "error": f"Error: {str(e)}"}
+        )
